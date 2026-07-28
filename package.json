@@ -1,0 +1,21 @@
+{
+  "name": "gestion-astro",
+  "type": "module",
+  "version": "0.0.1",
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "astro": "astro"
+  },
+  "dependencies": {
+    "@popperjs/core": "^2.11.8",
+    "ag-grid-enterprise": "^36.0.2",
+    "astro": "^7.1.5",
+    "bootstrap": "^5.3.8",
+    "bootstrap-icons": "^1.13.1"
+  }
+}
