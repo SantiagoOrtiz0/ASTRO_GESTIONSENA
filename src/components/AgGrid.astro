@@ -1,0 +1,118 @@
+---
+
+const {data,headers} = Astro.props;
+const lista  = btoa (JSON.stringify(data));
+const cabecera = btoa (JSON.stringify(headers));
+
+---
+
+<div class="container">
+<div id="myGrid" style="height: 500px; width: 100%;" data-datos={lista} data-cabecera={cabecera}>
+    Hola Tabla
+</div>
+
+
+<script>
+    import {createGrid,ModuleRegistry, AllEnterpriseModule} from "ag-grid-enterprise";
+    ModuleRegistry.registerModules([AllEnterpriseModule]);
+    const gridElement = document.getElementById('myGrid') as HTMLElement;
+
+
+
+    // 1.Leer los datos desde los atributos data
+    const ListaDatosBase64 = gridElement.dataset.datos ?? '';
+    const Cabecera = gridElement.dataset.cabecera ?? '';
+
+    const cabeceraTabla = JSON.parse(atob(Cabecera));
+    let gridApi;
+    console.log(cabeceraTabla);
+
+    const gridOptions = {
+        statusBar:{
+                        statusPanels:[{
+                        statusPanel:'agSelectedRowCountComponent', //Muestra las filas seleccionadas
+                        align:'left'
+                        },
+                        {
+                            statusPanel: 'agFilteredRowCountComponent', //Muestra las filas a las que se les aplica filtro
+                            align:'left'
+                        },
+                        {
+                            statusPanel: 'agTotalRowCountComponent', //Muestra el total de filas cargadas
+                            align: 'center'
+                        },
+                        {
+                            statusPanel: 'agAggregationComponent', //Muestra la suma, promedio, etc al seleccionar celdas
+                            align: 'right'
+                        }
+                    ]
+                 },
+
+
+                defaultColDef: {
+                        flex: 1,  //Permite que las columnas se adapten al contenedor
+                        filter: true, //Habilita los filtros en las columnas
+                        floatingFilter:true, //Muestra la barra de busqueda rapida debajo del encabezado
+                        enableRowGroup:true, // Permite agrupar por columnas
+                        enableValue:true, //Permite agrupar por columnas
+                    },
+
+
+                  sideBar:{
+                    toolPanels:[{
+                        id: 'columns',
+                        labelDefault: 'Columnas',
+                        labelKey: 'columns',
+                        iconKey: 'columns',
+                        toolPanel: 'agColumnsToolPanel', //Selector para mostrar y ocultar columnas
+
+                    },
+                    {
+                        id: 'filters',
+                        labelDefault: 'Filtros',
+                        labelKey: 'filters',
+                        iconKey: 'filters',
+                        toolPanel: 'agFiltersToolPanel', // Panel con todos los filtros de la tabla
+                    }
+                    ],
+                    defaultToolPanel: 'columns', //Panel que se abre por defecto
+                 },
+
+                 // Habilitar el menu contextual. Exporta a excel y CSV
+                 enableRangeSelection: true, 
+
+                 rowData: JSON.parse(atob(ListaDatosBase64)),
+
+                 columnDefs: [
+                    ...cabeceraTabla.map((campo: string)=>({
+                        field: campo,
+                        headerName: campo.charAt(0).toUpperCase() + campo.slice(1),
+                        sortable: true,
+                        filter: true,
+                        resizable: true,
+                    }))
+                 ],
+
+
+                //ACTIVA LA PAGINACIÓN
+                 pagination: true,
+
+                 //ACTIVA EL SALTO DE LINEAS
+                 wrapText: true,
+
+                 //ADAPTA LA ALTURA DE LA CELDA DE FORMA DINAMICA
+                 autoHeight: true,
+
+                 // Guardamos el api cuando la tabla este lista
+                 onGridReady:(params:any)=>{
+                    gridApi= params.api;
+                 }
+    }
+
+ const myGridElement = document.querySelector('#myGrid') as HTMLElement;
+        createGrid(myGridElement, gridOptions);
+</script>
+
+
+
+</div>
