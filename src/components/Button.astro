@@ -1,0 +1,29 @@
+---
+const {label, type ="button"} = Astro.props;
+---
+
+<button type={type} class="btn">{label}</button>
+
+<style>
+  .btn {
+    display: inline-block;
+    padding: 0.6rem 1.2rem;
+    margin: 0.4rem 0;
+    font-size: 1rem;
+    font-weight: 500;
+    color: #fff;
+    background-color: #0077cc;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+  }
+
+  .btn:hover {
+    background-color: #005fa3;
+  }
+
+  .btn:active {
+    background-color: #004d82;
+  }
+</style>

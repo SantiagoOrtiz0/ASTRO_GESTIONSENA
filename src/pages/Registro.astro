@@ -1,0 +1,50 @@
+---
+import Layout from "../layouts/Layout.astro";
+import InputField from "../components/InputField.astro";
+import Button from "../components/Button.astro";
+
+let mensaje = "";
+---
+
+<Layout title="Registro">
+  <div class="registro-container">
+    <h2>Registro de Aprendiz</h2>
+    <form>
+      <InputField id="nombres" type="text" placeholder="Nombres" required />
+      <InputField id="apellidos" type="text" placeholder="Apellidos" required />
+      <InputField id="contrasena" type="password" placeholder="Contraseña" required />
+      <Button type="submit" label="Registrar" />
+    </form>
+    <p>{mensaje}</p>
+  </div>
+
+  <style>
+    .registro-container {
+      max-width: 400px;
+      margin: 5rem auto;
+      padding: 2rem;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      background-color: #f9f9f9;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+      text-align: center;
+    }
+
+    h2 {
+      margin-bottom: 1rem;
+      color: #333;
+    }
+
+    form {
+      display: flex;
+      flex-direction: column;
+      gap: 0.8rem;
+    }
+
+    p {
+      margin-top: 1rem;
+      color: green;
+      font-size: 0.9rem;
+    }
+  </style>
+</Layout>
