@@ -1,77 +1,62 @@
 ---
 import Layout from "../../layouts/Layout.astro";
+import AgGridComponent from "../../components/AgGrid.astro";
+
+const idAprendiz = Number(Astro.url.searchParams.get("id"));
+
+const CargarAprendiz = async () => {
+  try{
+    const respuesta = await fetch("http://127.0.0.1:8001/Aprendiz");
+    if (!respuesta.ok) {
+      throw new Error(`Error HTTP: ${respuesta.status}`);
+    }
+      const ObjLista = await respuesta.json();
+      const Lista = ObjLista.data ?? [];
+      return Lista.find((a: any) => a.idAprendiz === idAprendiz);
+    } catch (error) {
+      console.error("Error al cargar aprendiz:", error);
+      return null;
+    }
+  };
+
+  const CargarAsistencias = async () => {
+    try{
+      const respuesta = await fetch("http://127.0.0.1:8001/asistencia");
+
+      if (!respuesta.ok) {
+        throw new Error(`Error HTTP: ${respuesta.status}`);
+      }
+
+      const ObjListaAsistencias = await respuesta.json();
+      const ListaAsistencias = ObjListaAsistencias.data ?? [];
+      return ListaAsistencias.filter((a:any) => a.idAprendiz === idAprendiz);
+ 
+    }catch (error){
+      console.error("Error al cargar asistencias:", error);
+      return [];
+    }
+  };
+
+  const CargarHorarios = async () => {
+    try{
+      const respuesta = await fetch("http://127.0.0.1:8001/horario");
+
+      if (!respuesta.ok){
+        throw new Error (`Error HTTP: ${respuesta.status}`);
+      }
+      const ObjListaHorario = await respuesta.json();
+      return ObjListaHorario.data ?? [];
+    } catch (error) {
+      console.error("Error al cargar horario:", error);
+      return [];
+    }
+  };
+
+
+  const aprendiz = await CargarAprendiz();
+  const ListaAsistencias = await CargarAsistencias();
+  const CabeceraAsistencias = ["Fecha", "Estado"];
+
+  const ListaHorarios = await CargarHorarios();
+  const CabeceraHorarios = ["Dia","HoraInicio","HoraFin"];
 ---
-
-<Layout title="Panel Aprendiz">
-  <div class="panel-container">
-    <h2>Panel del Aprendiz</h2>
-
-    <!-- Sección de datos personales -->
-    <div class="info-box">
-      <h3>Datos Personales</h3>
-      <p><strong>Nombre:</strong> [Aquí irá el nombre]</p>
-      <p><strong>Apellido:</strong> [Aquí irá el apellido]</p>
-      <p><strong>Ficha:</strong> [Número de ficha]</p>
-    </div>
-
-    <!-- Sección de horario -->
-    <div class="info-box">
-      <h3>Mi Horario</h3>
-      <table>
-        <thead>
-          <tr>
-            <th>Día</th>
-            <th>Hora Inicio</th>
-            <th>Hora Fin</th>
-            <th>Materia</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td>Lunes</td>
-            <td>8:00</td>
-            <td>12:00</td>
-            <td>Programación</td>
-          </tr>
-          <!-- Más filas aquí -->
-        </tbody>
-      </table>
-    </div>
-  </div>
-
-  <style>
-    .panel-container {
-      max-width: 900px;
-      margin: 3rem auto;
-      padding: 2rem;
-      border: 1px solid #ccc;
-      border-radius: 8px;
-      background-color: #f9f9f9;
-      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-    }
-
-    h2 {
-      text-align: center;
-      margin-bottom: 2rem;
-    }
-
-    .info-box {
-      margin-bottom: 2rem;
-    }
-
-    table {
-      width: 100%;
-      border-collapse: collapse;
-    }
-
-    th, td {
-      border: 1px solid #ccc;
-      padding: 0.6rem;
-      text-align: center;
-    }
-
-    th {
-      background-color: #eee;
-    }
-  </style>
-</Layout>
