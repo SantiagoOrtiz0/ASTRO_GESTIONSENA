@@ -4,6 +4,8 @@ import AgGridComponent from "../../components/AgGrid.astro";
 import { obtenerToken, decodificarToken, cerrarSesion } from "../../services/authService";
 
 const idAprendiz = Number(Astro.url.searchParams.get("id"));
+console.log("URL completa:", Astro.url.href);
+console.log("idAprendiz buscado:", idAprendiz);
 
 const CargarAprendiz = async () => {
   try{
@@ -53,12 +55,74 @@ const CargarAprendiz = async () => {
     }
   };
 
+
+  console.log("idAprendiz buscado:", idAprendiz, typeof idAprendiz);
   const aprendiz = await CargarAprendiz();
+  console.log("Aprendiz encontrado:", aprendiz);
   const ListaAsistencias = await CargarAsistencias();
-  const CabeceraAsistencias = ["Fecha", "Estado"];
+  const CabeceraAsistencias = ["Fecha","Estado"];
 
   const ListaHorarios = await CargarHorarios();
   const CabeceraHorarios = ["Dia","HoraInicio","HoraFin"];
+---
+<Layout title="Panel-Aprendiz">
+  <div class="panel-container">
+    <h2 class="titulo-principal">Panel de Aprendiz</h2>
+
+    <div class="info-box">
+      <h3>Datos Personales</h3>
+      <p><strong>Nombre:</strong> {aprendiz?.Nombres} {aprendiz?.Apellidos}</p>
+      <p><strong>Ficha:</strong> {aprendiz?.idFicha}</p>
+    </div>
+
+    <div class="info-box">
+      <h3>Mi horario</h3>
+      <AgGridComponent data={ListaHorarios} headers={CabeceraHorarios}></AgGridComponent>
+    </div>
+
+    <div class="info-box">
+      <h3>Mis asistencias</h3>
+      <AgGridComponent data={ListaAsistencias} headers={CabeceraAsistencias}></AgGridComponent>
+    </div>
+  </div>
+
+  <style>
+    .panel-container {
+      max-width: 1000px;
+      margin: 2rem auto;
+      padding: 2rem;
+      background: #f0f4f8;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+
+    .titulo-principal {
+      text-align: center;
+      color: #007BFF; /* Azul moderno */
+      font-size: 2rem;
+      margin-bottom: 1.5rem;
+    }
+
+    h3 {
+      color: #F5A623; /* Naranja para subtítulos */
+      margin-bottom: 1rem;
+    }
+
+    .info-box {
+      margin-bottom: 2rem;
+      padding: 1.5rem;
+      border-radius: 8px;
+      background: #fff;
+      border-left: 6px solid #007BFF;
+      transition: transform 0.2s ease;
+    }
+
+    .info-box:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 6px 14px rgba(0,0,0,0.12);
+    }
+  </style>
+</Layout>
 
 ---
 

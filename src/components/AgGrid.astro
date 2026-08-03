@@ -7,56 +7,58 @@ const cabecera = btoa (JSON.stringify(headers));
 ---
 
 <div class="container">
-<div id="myGrid" style="height: 500px; width: 100%;" data-datos={lista} data-cabecera={cabecera}>
-    Hola Tabla
+<div class="ag-grid-instance" style="height: 500px; width: 100%;" data-datos={lista} data-cabecera={cabecera}>
+    
 </div>
 
 
 <script>
     import {createGrid,ModuleRegistry, AllEnterpriseModule} from "ag-grid-enterprise";
     ModuleRegistry.registerModules([AllEnterpriseModule]);
-    const gridElement = document.getElementById('myGrid') as HTMLElement;
 
+    const gridElements = document.querySelectorAll('.ag-grid-instance');
 
+    gridElements.forEach((gridElement) => {
+      const el = gridElement as HTMLElement;
 
-    // 1.Leer los datos desde los atributos data
-    const ListaDatosBase64 = gridElement.dataset.datos ?? '';
-    const Cabecera = gridElement.dataset.cabecera ?? '';
+      if (el.dataset.gridInitialized === "true") return;
+      el.dataset.gridInitialized = "true";
 
-    const cabeceraTabla = JSON.parse(atob(Cabecera));
-    let gridApi;
-    console.log(cabeceraTabla);
+      const ListaDatosBase64 = el.dataset.datos ?? '';
+      const Cabecera = el.dataset.cabecera ?? '';
 
-    const gridOptions = {
+      const cabeceraTabla = JSON.parse(atob(Cabecera));
+      let gridApi;
+      console.log(cabeceraTabla);
+
+      const gridOptions = {
         statusBar:{
                         statusPanels:[{
-                        statusPanel:'agSelectedRowCountComponent', //Muestra las filas seleccionadas
+                        statusPanel:'agSelectedRowCountComponent',
                         align:'left'
                         },
                         {
-                            statusPanel: 'agFilteredRowCountComponent', //Muestra las filas a las que se les aplica filtro
+                            statusPanel: 'agFilteredRowCountComponent',
                             align:'left'
                         },
                         {
-                            statusPanel: 'agTotalRowCountComponent', //Muestra el total de filas cargadas
+                            statusPanel: 'agTotalRowCountComponent',
                             align: 'center'
                         },
                         {
-                            statusPanel: 'agAggregationComponent', //Muestra la suma, promedio, etc al seleccionar celdas
+                            statusPanel: 'agAggregationComponent',
                             align: 'right'
                         }
                     ]
                  },
 
-
                 defaultColDef: {
-                        flex: 1,  //Permite que las columnas se adapten al contenedor
-                        filter: true, //Habilita los filtros en las columnas
-                        floatingFilter:true, //Muestra la barra de busqueda rapida debajo del encabezado
-                        enableRowGroup:true, // Permite agrupar por columnas
-                        enableValue:true, //Permite agrupar por columnas
+                        flex: 1,
+                        filter: true,
+                        floatingFilter:true,
+                        enableRowGroup:true,
+                        enableValue:true,
                     },
-
 
                   sideBar:{
                     toolPanels:[{
@@ -64,21 +66,19 @@ const cabecera = btoa (JSON.stringify(headers));
                         labelDefault: 'Columnas',
                         labelKey: 'columns',
                         iconKey: 'columns',
-                        toolPanel: 'agColumnsToolPanel', //Selector para mostrar y ocultar columnas
-
+                        toolPanel: 'agColumnsToolPanel',
                     },
                     {
                         id: 'filters',
                         labelDefault: 'Filtros',
                         labelKey: 'filters',
                         iconKey: 'filters',
-                        toolPanel: 'agFiltersToolPanel', // Panel con todos los filtros de la tabla
+                        toolPanel: 'agFiltersToolPanel',
                     }
                     ],
-                    defaultToolPanel: 'columns', //Panel que se abre por defecto
+                    defaultToolPanel: 'columns',
                  },
 
-                 // Habilitar el menu contextual. Exporta a excel y CSV
                  enableRangeSelection: true, 
 
                  rowData: JSON.parse(atob(ListaDatosBase64)),
@@ -93,24 +93,17 @@ const cabecera = btoa (JSON.stringify(headers));
                     }))
                  ],
 
-
-                //ACTIVA LA PAGINACIÓN
                  pagination: true,
-
-                 //ACTIVA EL SALTO DE LINEAS
                  wrapText: true,
-
-                 //ADAPTA LA ALTURA DE LA CELDA DE FORMA DINAMICA
                  autoHeight: true,
 
-                 // Guardamos el api cuando la tabla este lista
                  onGridReady:(params:any)=>{
                     gridApi= params.api;
                  }
-    }
+      }
 
- const myGridElement = document.querySelector('#myGrid') as HTMLElement;
-        createGrid(myGridElement, gridOptions);
+      createGrid(el, gridOptions);
+    });
 </script>
 
 
