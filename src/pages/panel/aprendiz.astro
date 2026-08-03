@@ -1,6 +1,7 @@
 ---
 import Layout from "../../layouts/Layout.astro";
 import AgGridComponent from "../../components/AgGrid.astro";
+import { obtenerToken, decodificarToken, cerrarSesion } from "../../services/authService";
 
 const idAprendiz = Number(Astro.url.searchParams.get("id"));
 console.log("URL completa:", Astro.url.href);
@@ -122,3 +123,22 @@ const CargarAprendiz = async () => {
     }
   </style>
 </Layout>
+
+---
+
+<script lang="ts">
+  import { obtenerToken, decodificarToken, cerrarSesion } from "../../services/authService";
+
+  document.addEventListener("DOMContentLoaded", () => {
+    const token = obtenerToken();
+    if (!token) {
+      window.location.href = "/";
+    } else {
+      const payload = decodificarToken(token);
+      if (payload.tipo !== "aprendiz") {
+        cerrarSesion();
+        window.location.href = "/";
+      }
+    }
+  });
+</script>
