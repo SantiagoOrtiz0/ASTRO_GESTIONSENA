@@ -64,7 +64,9 @@ const CargarAprendiz = async () => {
 
   const ListaHorarios = await CargarHorarios();
   const CabeceraHorarios = ["Dia","HoraInicio","HoraFin"];
+
 ---
+
 <Layout title="Panel-Aprendiz">
   <div class="panel-container">
     <h2 class="titulo-principal">Panel de Aprendiz</h2>
@@ -123,8 +125,6 @@ const CargarAprendiz = async () => {
     }
   </style>
 </Layout>
-
----
 
 <script lang="ts">
   import { obtenerToken, decodificarToken, cerrarSesion } from "../../services/authService";
