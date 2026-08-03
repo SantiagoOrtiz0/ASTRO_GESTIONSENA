@@ -1,6 +1,7 @@
 ---
 import Layout from "../../layouts/Layout.astro";
 import AgGridComponent from "../../components/AgGrid.astro";
+import { obtenerToken, decodificarToken, cerrarSesion } from "../../services/authService";
 
 const idAprendiz = Number(Astro.url.searchParams.get("id"));
 
@@ -52,11 +53,28 @@ const CargarAprendiz = async () => {
     }
   };
 
-
   const aprendiz = await CargarAprendiz();
   const ListaAsistencias = await CargarAsistencias();
   const CabeceraAsistencias = ["Fecha", "Estado"];
 
   const ListaHorarios = await CargarHorarios();
   const CabeceraHorarios = ["Dia","HoraInicio","HoraFin"];
+
 ---
+
+<script lang="ts">
+  import { obtenerToken, decodificarToken, cerrarSesion } from "../../services/authService";
+
+  document.addEventListener("DOMContentLoaded", () => {
+    const token = obtenerToken();
+    if (!token) {
+      window.location.href = "/";
+    } else {
+      const payload = decodificarToken(token);
+      if (payload.tipo !== "aprendiz") {
+        cerrarSesion();
+        window.location.href = "/";
+      }
+    }
+  });
+</script>
