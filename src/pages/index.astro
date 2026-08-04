@@ -58,9 +58,11 @@ import Button from "../components/Button.astro";
 
     if (data.token) {
       guardarSesion(data.token, data.tipo, data.panel);
-      window.location.href = `/panel/${data.panel}?id=${data.idAprendiz}`;
+
+      const id = data.tipo === "aprendiz" ? data.idAprendiz : data.idUsuario;
+      window.location.href = `/panel/${data.panel}?id=${id}`;
     } else {
-      errorMsg.textContent = data.mensaje || "Error al iniciar sesión";
+      errorMsg.textContent = data.mensaje || "Error al iniciar sesion";
       errorMsg.style.display = "block";
     }
   });

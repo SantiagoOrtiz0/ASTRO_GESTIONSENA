@@ -1,0 +1,152 @@
+---
+export const prerender = false;
+import Layout from "../../layouts/Layout.astro";
+import AgGridComponent from "../../components/AgGrid.astro";
+
+const idUsuario = Number(Astro.url.searchParams.get("id"));
+console.log("URL completo:", Astro.url.href);
+console.log("idUsuario:", idUsuario);
+
+const CargarUsuario = async () => {
+  try {
+    const respuesta = await fetch("http://127.0.0.1:8001/usuario");
+    if (!respuesta.ok) throw new Error(`Error HTTP: ${respuesta.status}`);
+    const Lista = (await respuesta.json()).data ?? [];
+    return Lista.find((u: any) => u.idUsuario === idUsuario);
+  } catch (error) {
+    console.error("Error al cargar usuario:", error);
+    return null;
+  }
+};
+
+const CargarAsignaturas = async () => {
+  try {
+    const [resAsig, resRel] = await Promise.all([
+      fetch("http://127.0.0.1:8001/Asignatura"),
+      fetch("http://127.0.0.1:8001/usuarioasignatura"),
+    ]);
+    if (!resAsig.ok || !resRel.ok) throw new Error("Error HTTP al cargar asignaturas");
+
+    const ListaAsignaturas = (await resAsig.json()).data ?? [];
+    const ListaRelaciones = (await resRel.json()).data ?? [];
+    const idsAsignadas = ListaRelaciones.filter((r: any) => r.idUsuario === idUsuario).map((r: any) => r.idAsignatura);
+
+    return ListaAsignaturas.filter((a: any) => idsAsignadas.includes(a.idAsignatura));
+  } catch (error) {
+    console.error("Error al cargar asignaturas:", error);
+    return [];
+  }
+};
+
+const CargarFichas = async () => {
+  try {
+    const [resFicha, resRel] = await Promise.all([
+      fetch("http://127.0.0.1:8001/ficha"),
+      fetch("http://127.0.0.1:8001/usuarioficha"),
+    ]);
+    if (!resFicha.ok || !resRel.ok) throw new Error("Error HTTP al cargar fichas");
+
+    const ListaFichas = (await resFicha.json()).data ?? [];
+    const ListaRelaciones = (await resRel.json()).data ?? [];
+    const idsFichas = ListaRelaciones.filter((r: any) => r.idUsuario === idUsuario).map((r: any) => r.idFicha);
+
+    return ListaFichas.filter((f: any) => idsFichas.includes(f.idFicha));
+  } catch (error) {
+    console.error("Error al cargar fichas:", error);
+    return [];
+  }
+};
+
+const CargarAprendicesDeFichas = async (idsFichas: number[]) => {
+  try {
+    const respuesta = await fetch("http://127.0.0.1:8001/Aprendiz");
+    if (!respuesta.ok) throw new Error(`Error HTTP: ${respuesta.status}`);
+    const Lista = (await respuesta.json()).data ?? [];
+    return Lista.filter((a: any) => idsFichas.includes(a.idFicha));
+  } catch (error) {
+    console.error("Error al cargar aprendices:", error);
+    return [];
+  }
+};
+
+const usuario = await CargarUsuario();
+const ListaAsignaturas = await CargarAsignaturas();
+const ListaFichas = await CargarFichas();
+const ListaAprendices = await CargarAprendicesDeFichas(ListaFichas.map((f: any) => f.idFicha));
+
+const CabeceraAsignatura = ["NombreAsignatura"];
+const CabeceraFicha = ["Numero_Ficha"];
+const CabeceraAprendices = ["Nombres", "Apellidos"];
+---
+
+<Layout title="Panel-Instructor">
+  <!-- NAVBAR INSTRUCTOR -->
+  <nav class="navbar navbar-dark bg-primary mb-4">
+    <div class="container">
+      <span class="navbar-brand mb-0 h1">
+        <i class="bi bi-person-workspace me-2"></i>Panel Instructor
+      </span>
+    </div>
+  </nav>
+
+  <div class="container pb-5">
+
+    <!-- DATOS PERSONALES -->
+    <div class="card shadow-sm mb-4">
+      <div class="card-header bg-white">
+        <span><i class="bi bi-person-badge-fill me-2"></i>Datos Personales</span>
+      </div>
+      <div class="card-body">
+        <p class="mb-0"><strong>Nombre:</strong> {usuario?.nombres} {usuario?.apellidos}</p>
+      </div>
+    </div>
+
+    <!-- MI ASIGNATURA -->
+    <div class="card shadow-sm mb-4">
+      <div class="card-header bg-white">
+        <span><i class="bi bi-journal-text me-2"></i>Mi Asignatura</span>
+      </div>
+      <div class="card-body">
+        <AgGridComponent data={ListaAsignaturas} headers={CabeceraAsignatura}></AgGridComponent>
+      </div>
+    </div>
+
+    <!-- MI FICHA -->
+    <div class="card shadow-sm mb-4">
+      <div class="card-header bg-white">
+        <span><i class="bi bi-folder-fill me-2"></i>Mi Ficha</span>
+      </div>
+      <div class="card-body">
+        <AgGridComponent data={ListaFichas} headers={CabeceraFicha}></AgGridComponent>
+      </div>
+    </div>
+
+    <!-- MIS APRENDICES -->
+    <div class="card shadow-sm mb-4">
+      <div class="card-header bg-white">
+        <span><i class="bi bi-mortarboard-fill me-2"></i>Mis Aprendices</span>
+      </div>
+      <div class="card-body">
+        <AgGridComponent data={ListaAprendices} headers={CabeceraAprendices}></AgGridComponent>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    import { obtenerToken, decodificarToken, cerrarSesion } from "../../services/authService";
+
+    document.addEventListener("DOMContentLoaded", () => {
+      const token = obtenerToken();
+      if (!token) {
+        window.location.href = "/";
+      } else {
+        const payload = decodificarToken(token);
+        if (payload.tipo !== "usuario") {
+          cerrarSesion();
+          window.location.href = "/";
+        }
+      }
+    });
+  </script>
+</Layout>
