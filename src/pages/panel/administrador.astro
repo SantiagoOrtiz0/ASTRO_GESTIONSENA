@@ -1,0 +1,143 @@
+---
+export const prerender = false;
+import Layout from "../../layouts/Layout.astro";
+import AgGridComponent from "../../components/AgGrid.astro";
+
+
+const idUsuario = Number(Astro.url.searchParams.get("id"));
+
+const CargarUsuarios = async () => {
+    try{
+        const respuesta = await fetch("http://127.0.0.1:8001/usuario");
+        if(!respuesta.ok) {
+        throw new Error(`Error HTTP: ${respuesta.status}`);
+        }
+        const ObjLista = await respuesta.json();
+        return ObjLista.data ?? [];
+    } catch (error){
+        console.error("Error al cargar usuarios:", error);
+        return [];
+    }
+};
+
+const CargarAprendices = async () => {
+    try{
+        const respuesta = await fetch("http://127.0.0.1:8001/Aprendiz");
+        if(!respuesta.ok){
+            throw new Error(`Error HTTP: ${respuesta.status}`);
+        }
+        const ObjAprendiz = await respuesta.json();
+        return ObjAprendiz.data ?? [];
+    } catch (error){
+        console.error("Error al cargar aprendices:", error);
+        return [];
+    }
+ };
+
+
+ const CargarProgramas = async () => {
+    try{
+        const respuesta = await fetch("http://127.0.0.1:8001/programa");
+        if(!respuesta.ok){
+            throw new Error(`Error HTTP: ${respuesta.status}`);
+        }
+        const ObjPrograma = await respuesta.json();
+        return ObjPrograma.data ?? [];
+    } catch (error){
+        console.error("Error al cargar programa:", error);
+    }
+ };
+
+
+ const CargarHorarios = async () => {
+    try{
+        const respuesta = await fetch("http://127.0.0.1:8001/horario");
+        if(!respuesta.ok){
+            throw new Error(`Error HTTP: ${respuesta.status}`);
+        }
+        const ObjHorario = await respuesta.json();
+        return ObjHorario.data ?? [];
+    }catch (error){
+        console.error("Error al cargar horario:", error);
+        
+    }
+ };
+
+    const ListaUsuarios = await CargarUsuarios();
+    const CabeceraUsuarios = ["idUsuario","nombres","apellidos","idRol"];
+
+    const ListaAprendices = await CargarAprendices();
+    const CabeceraAprendices = ["idAprendiz","Nombres","Apellidos","idFicha"];
+
+    const ListaProgramas = await CargarProgramas();
+    const CabeceraProgramas = ["idPrograma","nombrePrograma"];
+
+    const ListaHorarios = await CargarHorarios();
+    const CabeceraHorarios = ["idHorario","Dia","HoraInicio","HoraFin"];
+---
+<!-- NAVBAR ADMIN -->
+ 
+ <Layout title="Panel-Administrador">
+    <nav class="navbar navbar-dark bg-primary mb-4">
+        <div class="container">
+            <span class="navbar-brand mb-0 h1">
+                <i class="bi bi-shield-lock-fill me-2"></i>Panel Administrador
+            </span>
+        </div>
+    </nav>
+
+<!-- DISEÑO USUARIO -->
+
+    <div class="container pb-5">
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-white d-flex justify-content-between align-items-center">
+            <span><i class="bi bi-people-fill me-2"></i>Usuarios</span>
+            <button class="btn btn-success btn-sm" onclick="abrirModal('usuario')">
+                <i class="bi bi-plus-circle"></i> Nuevo
+            </button>
+            </div>
+            <div class="card-body">
+                <AgGridComponent data={ListaUsuarios} headers={CabeceraUsuarios}></AgGridComponent>
+            </div>
+        </div>
+
+ <!-- DISEÑO APRENDICES -->
+     <div class="card shadow-sm mb-4">
+      <div class="card-header bg-white d-flex justify-content-between align-items-center">
+        <span><i class="bi bi-mortarboard-fill me-2"></i>Aprendices</span>
+        <button class="btn btn-success btn-sm" onclick="abrirModal('aprendiz')">
+          <i class="bi bi-plus-circle"></i> Nuevo
+        </button>
+      </div>
+      <div class="card-body">
+        <AgGridComponent data={ListaAprendices} headers={CabeceraAprendices}></AgGridComponent>
+      </div>
+    </div>
+
+<!-- DISEÑO PROGRAMAS -->
+        <div class="card shadow-sm mb-4">
+      <div class="card-header bg-white d-flex justify-content-between align-items-center">
+        <span><i class="bi bi-journal-bookmark-fill me-2"></i>Programas</span>
+        <button class="btn btn-success btn-sm" onclick="abrirModal('programa')">
+          <i class="bi bi-plus-circle"></i> Nuevo
+        </button>
+      </div>
+      <div class="card-body">
+        <AgGridComponent data={ListaProgramas} headers={CabeceraProgramas}></AgGridComponent>
+      </div>
+    </div>
+    <!-- DISEÑO HORARIOS -->
+<div class="card shadow-sm mb-4">
+  <div class="card-header bg-white d-flex justify-content-between align-items-center">
+    <span><i class="bi bi-clock-fill me-2"></i>Horarios</span>
+    <button class="btn btn-success btn-sm" onclick="abrirModal('horario')">
+      <i class="bi bi-plus-circle"></i> Nuevo
+    </button>
+  </div>
+  <div class="card-body">
+    <AgGridComponent data={ListaHorarios} headers={CabeceraHorarios}></AgGridComponent>
+  </div>
+</div>
+    </div>
+
+ </Layout>
