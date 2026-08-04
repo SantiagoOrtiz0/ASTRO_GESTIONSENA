@@ -2,7 +2,6 @@
 export const prerender = false;
 import Layout from "../../layouts/Layout.astro";
 import AgGridComponent from "../../components/AgGrid.astro";
-import { obtenerToken, decodificarToken, cerrarSesion } from "../../services/authService";
 
 const idAprendiz = Number(Astro.url.searchParams.get("id"));
 console.log("URL completa:", Astro.url.href);
