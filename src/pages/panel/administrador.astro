@@ -1,7 +1,7 @@
 ---
 export const prerender = false;
 import Layout from "../../layouts/Layout.astro";
-import AgGridComponent from "../../components/AgGrid.astro";
+import AgGridAdmin from "../../components/AgGridAdmin.astro";
 
 
 const idUsuario = Number(Astro.url.searchParams.get("id"));
@@ -92,12 +92,9 @@ const CargarAprendices = async () => {
         <div class="card shadow-sm mb-4">
             <div class="card-header bg-white d-flex justify-content-between align-items-center">
             <span><i class="bi bi-people-fill me-2"></i>Usuarios</span>
-            <button class="btn btn-success btn-sm" onclick="abrirModal('usuario')">
-                <i class="bi bi-plus-circle"></i> Nuevo
-            </button>
             </div>
             <div class="card-body">
-                <AgGridComponent data={ListaUsuarios} headers={CabeceraUsuarios}></AgGridComponent>
+                <AgGridAdmin data={ListaUsuarios} headers={CabeceraUsuarios} endpoint="http://127.0.0.1:8001/usuario" idField="idUsuario"></AgGridAdmin>
             </div>
         </div>
 
@@ -105,12 +102,9 @@ const CargarAprendices = async () => {
      <div class="card shadow-sm mb-4">
       <div class="card-header bg-white d-flex justify-content-between align-items-center">
         <span><i class="bi bi-mortarboard-fill me-2"></i>Aprendices</span>
-        <button class="btn btn-success btn-sm" onclick="abrirModal('aprendiz')">
-          <i class="bi bi-plus-circle"></i> Nuevo
-        </button>
       </div>
       <div class="card-body">
-        <AgGridComponent data={ListaAprendices} headers={CabeceraAprendices}></AgGridComponent>
+        <AgGridAdmin data={ListaAprendices} headers={CabeceraAprendices} endpoint="http://127.0.0.1:8001/Aprendiz" idField="idAprendiz"></AgGridAdmin>
       </div>
     </div>
 
@@ -118,26 +112,36 @@ const CargarAprendices = async () => {
         <div class="card shadow-sm mb-4">
       <div class="card-header bg-white d-flex justify-content-between align-items-center">
         <span><i class="bi bi-journal-bookmark-fill me-2"></i>Programas</span>
-        <button class="btn btn-success btn-sm" onclick="abrirModal('programa')">
-          <i class="bi bi-plus-circle"></i> Nuevo
-        </button>
       </div>
       <div class="card-body">
-        <AgGridComponent data={ListaProgramas} headers={CabeceraProgramas}></AgGridComponent>
+        <AgGridAdmin data={ListaProgramas} headers={CabeceraProgramas} endpoint="http://127.0.0.1:8001/programa" idField="idPrograma"></AgGridAdmin>
       </div>
     </div>
     <!-- DISEÑO HORARIOS -->
 <div class="card shadow-sm mb-4">
   <div class="card-header bg-white d-flex justify-content-between align-items-center">
     <span><i class="bi bi-clock-fill me-2"></i>Horarios</span>
-    <button class="btn btn-success btn-sm" onclick="abrirModal('horario')">
-      <i class="bi bi-plus-circle"></i> Nuevo
-    </button>
   </div>
   <div class="card-body">
-    <AgGridComponent data={ListaHorarios} headers={CabeceraHorarios}></AgGridComponent>
+    <AgGridAdmin data={ListaHorarios} headers={CabeceraHorarios} endpoint="http://127.0.0.1:8001/horario" idField="idHorario"></AgGridAdmin>
   </div>
 </div>
     </div>
-
  </Layout>
+
+ <script>
+    import { obtenerToken, decodificarToken, cerrarSesion } from "../../services/authService";
+
+    document.addEventListener("DOMContentLoaded", () => {
+      const token = obtenerToken();
+      if (!token) {
+        window.location.href = "/";
+      } else {
+        const payload = decodificarToken(token);
+        if (payload.tipo !== "usuario") {
+          cerrarSesion();
+          window.location.href = "/";
+        }
+      }
+    });
+  </script>
