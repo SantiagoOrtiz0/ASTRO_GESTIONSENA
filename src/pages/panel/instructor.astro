@@ -2,6 +2,7 @@
 export const prerender = false;
 import Layout from "../../layouts/Layout.astro";
 import AgGridComponent from "../../components/AgGrid.astro";
+import AgGridAdmin from "../../components/AgGridAdmin.astro";
 
 const idUsuario = Number(Astro.url.searchParams.get("id"));
 console.log("URL completo:", Astro.url.href);
@@ -69,11 +70,54 @@ const CargarAprendicesDeFichas = async (idsFichas: number[]) => {
   }
 };
 
+const CargarHorarios = async () => {
+  try {
+    const respuesta = await fetch("http://127.0.0.1:8001/horario");
+    if (!respuesta.ok) throw new Error(`Error HTTP: ${respuesta.status}`);
+    return (await respuesta.json()).data ?? [];
+  } catch (error) {
+    console.error("Error al cargar horarios:", error);
+    return [];
+  }
+};
+
+const CargarCombos = async (idsFichas: number[], idsAsignaturas: number[]) => {
+  try {
+    const respuesta = await fetch("http://127.0.0.1:8001/horarioFichaAsignatura");
+    if (!respuesta.ok) throw new Error(`Error HTTP: ${respuesta.status}`);
+    const Lista = (await respuesta.json()).data ?? [];
+    return Lista.filter((c: any) => idsFichas.includes(c.idFicha) && idsAsignaturas.includes(c.idAsignatura));
+  } catch (error) {
+    console.error("Error al cargar combos:", error);
+    return [];
+  }
+};
+
+const CargarAsistenciasDeMisAprendices = async (idsAprendices: number[]) => {
+  try {
+    const respuesta = await fetch("http://127.0.0.1:8001/asistencia");
+    if (!respuesta.ok) throw new Error(`Error HTTP: ${respuesta.status}`);
+    const Lista = (await respuesta.json()).data ?? [];
+    return Lista.filter((a: any) => idsAprendices.includes(a.idAprendiz));
+  } catch (error) {
+    console.error("Error al cargar asistencias:", error);
+    return [];
+  }
+};
+
 const usuario = await CargarUsuario();
 const ListaAsignaturas = await CargarAsignaturas();
 const ListaFichas = await CargarFichas();
 const ListaAprendices = await CargarAprendicesDeFichas(ListaFichas.map((f: any) => f.idFicha));
-
+const ListaHorarios = await CargarHorarios();
+const ListaCombos = await CargarCombos(
+  ListaFichas.map((f: any) => f.IdFicha),
+  ListaAsignaturas.map((a: any) => a.idAsignatura)
+);
+const ListaAsistenciasAprendices = await CargarAsistenciasDeMisAprendices(
+  ListaAprendices.map((a:any) => a.idAprendiz)
+);
+const CabeceraAsistenciaInstructor = ["idAsistencia", "idAprendiz", "Fecha", "Estado"];
 const CabeceraAsignatura = ["NombreAsignatura"];
 const CabeceraFicha = ["Numero_Ficha"];
 const CabeceraAprendices = ["Nombres", "Apellidos"];
@@ -133,6 +177,35 @@ const CabeceraAprendices = ["Nombres", "Apellidos"];
 
   </div>
 
+  <div class="card shadow-sm mb-4">
+    <div class="card-header bg-white">
+      <span><i class="bi bi-list-check me-2"></i>Gestion de asistencias</span>
+    </div>
+    <div class="card-body">
+      <AgGridAdmin data={ListaAsistenciasAprendices} headers={CabeceraAsistenciaInstructor} endpoint="http://127.0.0.1:8001/asistencia" idField="idAsistencia" mostrarEliminar={false}/>
+    </div>
+  </div>
+
+  <div class="card shadow-sm mb-4">
+  <div class="card-header bg-white">
+    <span><i class="bi bi-info-circle me-2"></i>Referencia: IDs de tus clases</span>
+  </div>
+  <div class="card-body">
+    <table class="table table-sm">
+      <thead><tr><th>ID</th><th>Ficha</th><th>Asignatura</th><th>Día</th></tr></thead>
+      <tbody>
+        {ListaCombos.map((c: any) => (
+          <tr>
+            <td>{c.idHorario_Ficha_Asignatura}</td>
+            <td>{ListaFichas.find((f: any) => f.idFicha === c.idFicha)?.Numero_Ficha}</td>
+            <td>{ListaAsignaturas.find((a: any) => a.idAsignatura === c.idAsignatura)?.NombreAsignatura}</td>
+            <td>{ListaHorarios.find((h: any) => h.idHorario === c.idHorario)?.Dia}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </div>
+</div>
   <script>
     import { obtenerToken, decodificarToken, cerrarSesion } from "../../services/authService";
 
