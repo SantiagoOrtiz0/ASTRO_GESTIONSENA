@@ -116,7 +116,6 @@ const cabecera = btoa(JSON.stringify(headers));
                 }
             };
 
-            // ---------- Modal de edición ----------
             const contenedorPadre = el.parentElement as HTMLElement;
 
             const modalOverlay = document.createElement("div");
@@ -172,7 +171,6 @@ const cabecera = btoa(JSON.stringify(headers));
                 if (evento.target === modalOverlay) cerrarModal();
             });
 
-            // Para inferir si un campo es numérico incluso al crear (sin valor todavía)
             const esCampoNumerico = (campo: string) =>
                 typeof datosIniciales[0]?.[campo] === "number" ||
                 campo.toLowerCase().startsWith("id");
@@ -189,6 +187,7 @@ const cabecera = btoa(JSON.stringify(headers));
 
                 const esNumero = esCampoNumerico(campo);
                 if (esNumero) input.type = "number";
+                if (campo === "contrasena") input.type = "password";
 
                 input.addEventListener("input", () => {
                     filaEnEdicion[campo] = esNumero
@@ -210,11 +209,21 @@ const cabecera = btoa(JSON.stringify(headers));
                 modalCampos.innerHTML = "";
 
                 cabeceraTabla
-                    .filter((campo: string) => campo !== "contrasena")
-                    .forEach((campo: string) => {
-                        const input = crearCampoModal(campo, rowData[campo]);
-                        input.disabled = campo === idField;
-                    });
+                    .forEach((campo: string) => {    
+            const valorInicial = campo === "contrasena" ? "" : rowData[campo];
+            const input = crearCampoModal(campo, valorInicial);
+            input.disabled = campo === idField;
+
+            if (campo === "contrasena") {
+                input.placeholder = "Dejar vacío para no cambiarla";
+                
+                input.addEventListener("input", () => {
+                    if (!input.value) {
+                        delete filaEnEdicion.contrasena;
+                    }
+                });
+            }
+        });
 
                 modalOverlay.classList.add("abierto");
             };
@@ -225,14 +234,11 @@ const cabecera = btoa(JSON.stringify(headers));
                 filaEnEdicion = {};
                 modalCampos.innerHTML = "";
 
-                // El id lo genera la base de datos, no se pide al crear
                 cabeceraTabla
-                    .filter(
-                        (campo: string) =>
-                            campo !== "contrasena" && campo !== idField,
-                    )
+                    .filter((campo: string) => campo !== idField)
                     .forEach((campo: string) => {
-                        crearCampoModal(campo, "");
+                        const input = crearCampoModal(campo, "");
+                        if (campo === "contrasena") input.required = true;
                     });
 
                 modalOverlay.classList.add("abierto");

@@ -64,10 +64,10 @@ const CargarAprendices = async () => {
  };
 
     const ListaUsuarios = await CargarUsuarios();
-    const CabeceraUsuarios = ["idUsuario","nombres","apellidos","idRol"];
+    const CabeceraUsuarios = ["idUsuario","nombres","apellidos", "contrasena", "idRol"];
 
     const ListaAprendices = await CargarAprendices();
-    const CabeceraAprendices = ["idAprendiz","Nombres","Apellidos","idFicha"];
+    const CabeceraAprendices = ["idAprendiz","Nombres","Apellidos", "contrasena", "idFicha"];
 
     const ListaProgramas = await CargarProgramas();
     const CabeceraProgramas = ["idPrograma","nombrePrograma"];
