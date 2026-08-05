@@ -28,6 +28,7 @@ const cabecera = btoa(JSON.stringify(headers));
             ModuleRegistry,
             AllEnterpriseModule,
         } from "ag-grid-enterprise";
+import { string, undefined } from "astro:schema";
         ModuleRegistry.registerModules([AllEnterpriseModule]);
 
         const gridElements = document.querySelectorAll(
@@ -171,6 +172,18 @@ const cabecera = btoa(JSON.stringify(headers));
                 if (evento.target === modalOverlay) cerrarModal();
             });
 
+            const esCampoFecha = (campo: string) => 
+                campo.toLowerCase().includes("fecha");
+
+            const esCampoEstado = (campo: string) => 
+                campo === "Estado";
+
+            const OPCIONES_ESTADO =["Asistio", "Retraso", "Ausente", "Justificado"];
+            
+            const formatearFecha = (params: any) => {
+                if(!params.value) return "";
+                return String(params.value).slice(0, 10);
+            }
             const esCampoNumerico = (campo: string) =>
                 typeof datosIniciales[0]?.[campo] === "number" ||
                 campo.toLowerCase().startsWith("id");
@@ -182,18 +195,50 @@ const cabecera = btoa(JSON.stringify(headers));
                 const label = document.createElement("label");
                 label.innerText = campo.charAt(0).toUpperCase() + campo.slice(1);
 
-                const input = document.createElement("input");
-                input.value = valorInicial ?? "";
+                let input: HTMLInputElement | HTMLSelectElement;
 
-                const esNumero = esCampoNumerico(campo);
-                if (esNumero) input.type = "number";
-                if (campo === "contrasena") input.type = "password";
+                if (esCampoEstado(campo)) {
+                    const select = document.createElement("select");
 
-                input.addEventListener("input", () => {
-                    filaEnEdicion[campo] = esNumero
-                        ? Number(input.value)
-                        : input.value;
-                });
+                    const opcionVacia = document.createElement("option");
+                    opcionVacia.value = "";
+                    opcionVacia.innerText = "Seleccione un estado";
+                    select.appendChild(opcionVacia);
+
+                    OPCIONES_ESTADO.forEach((opcion) => {
+                        const option = document.createElement("option");
+                        option.value = opcion;
+                        option.innerText = opcion;
+                        if (opcion === valorInicial) option.selected = true;
+                        select.appendChild(option);
+                    });
+
+                    select.addEventListener("change", () => {
+                        filaEnEdicion[campo] = select.value;
+                    });
+
+                    input = select;
+                } else {
+                    const inputEl = document.createElement("input");
+                    const esNumero = esCampoNumerico(campo);
+                    const esFecha = esCampoFecha(campo);
+
+                    if (esFecha) {
+                        inputEl.type = "date";
+                        inputEl.value = valorInicial ? String(valorInicial).slice(0, 10) : "";
+                    } else {
+                        inputEl.value = valorInicial ?? "";
+                        if (esNumero) inputEl.type = "number";
+                        if (campo === "contrasena") inputEl.type = "password";
+                    }
+
+                    inputEl.addEventListener("input", () => {
+                        const esNum = esCampoNumerico(campo);
+                        filaEnEdicion[campo] = esNum ? Number(inputEl.value) : inputEl.value;
+                    });
+
+                    input = inputEl;
+                }
 
                 grupo.appendChild(label);
                 grupo.appendChild(input);
@@ -215,14 +260,19 @@ const cabecera = btoa(JSON.stringify(headers));
             input.disabled = campo === idField;
 
             if (campo === "contrasena") {
-                input.placeholder = "Dejar vacío para no cambiarla";
-                
-                input.addEventListener("input", () => {
-                    if (!input.value) {
-                        delete filaEnEdicion.contrasena;
-                    }
-                });
-            }
+    (input as HTMLInputElement).placeholder = "Dejar vacío para no cambiarla";
+    delete filaEnEdicion.contrasena;   // ← se borra apenas se abre el modal, no solo al escribir
+
+    input.addEventListener("input", () => {
+        const valor = (input as HTMLInputElement).value;
+        if (!valor) {
+            delete filaEnEdicion.contrasena;
+        } else {
+            filaEnEdicion.contrasena = valor;
+        }
+    });
+}
+
         });
 
                 modalOverlay.classList.add("abierto");
@@ -329,13 +379,31 @@ const cabecera = btoa(JSON.stringify(headers));
                 getRowId: (params: any) => String(params.data[idField]),
 
                 columnDefs: [
-                    ...cabeceraTabla
-                        .filter((campo: string) => campo !== "contrasena")
-                        .map((campo: string) => ({
-                            field: campo,
-                            headerName:
-                                campo.charAt(0).toUpperCase() + campo.slice(1),
-                        })),
+    ...cabeceraTabla
+        .filter((campo: string) => campo !== "contrasena")
+        .map((campo: string) => {
+            const columna: any = {
+                field: campo,
+                headerName: campo.charAt(0).toUpperCase() + campo.slice(1),
+            };
+            if (campo.toLowerCase().includes("fecha")) {
+                columna.valueFormatter = formatearFecha;
+            }
+            return columna;
+        }),
+
+                // columnDefs: [
+                //     ...cabeceraTabla
+                //         .filter((campo: string) => campo !== "contrasena")
+                //         .map((campo: string) => ({
+                //             field: campo,
+                //             headerName:
+                //                 campo.charAt(0).toUpperCase() + campo.slice(1),
+                //                 valueFormater: campo.toLowerCase().includes("fecha")
+                //                 ? (params: any) =>
+                //                     params.value ? String(params.value).slice(0,10) : ""
+                //                     : undefined,
+                //         })),
                     {
                         headerName: "Acciones",
                         editable: false,
