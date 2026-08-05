@@ -1,111 +1,454 @@
 ---
-
-const {data,headers} = Astro.props;
-const lista  = btoa (JSON.stringify(data));
-const cabecera = btoa (JSON.stringify(headers));
-
+const { data, headers, endpoint, idField } = Astro.props;
+const lista = btoa(JSON.stringify(data));
+const cabecera = btoa(JSON.stringify(headers));
 ---
 
 <div class="container">
-<div class="ag-grid-instance" style="height: 500px; width: 100%;" data-datos={lista} data-cabecera={cabecera}>
-    
-</div>
+    <div class="ag-grid-toolbar">
+        <button type="button" class="btn btn-success btn-sm btn-nuevo">
+            <i class="bi bi-plus-circle"></i> Nuevo
+        </button>
+    </div>
 
+    <div
+        class="ag-grid-admin-instance"
+        style="height: 500px; width: 100%;"
+        data-datos={lista}
+        data-cabecera={cabecera}
+        data-endpoint={endpoint}
+        data-idfield={idField}
+    >
+    </div>
 
-<script>
-    import {createGrid,ModuleRegistry, AllEnterpriseModule} from "ag-grid-enterprise";
-    ModuleRegistry.registerModules([AllEnterpriseModule]);
+    <script>
+        import {
+            createGrid,
+            ModuleRegistry,
+            AllEnterpriseModule,
+        } from "ag-grid-enterprise";
+        ModuleRegistry.registerModules([AllEnterpriseModule]);
 
-    const gridElements = document.querySelectorAll('.ag-grid-instance');
+        const gridElements = document.querySelectorAll(
+            ".ag-grid-admin-instance",
+        );
 
-    gridElements.forEach((gridElement) => {
-      const el = gridElement as HTMLElement;
+        gridElements.forEach((gridElement) => {
+            const el = gridElement as HTMLElement;
 
-      if (el.dataset.gridInitialized === "true") return;
-      el.dataset.gridInitialized = "true";
+            if (el.dataset.gridInitialized === "true") return;
+            el.dataset.gridInitialized = "true";
 
-      const ListaDatosBase64 = el.dataset.datos ?? '';
-      const Cabecera = el.dataset.cabecera ?? '';
+            const ListaDatosBase64 = el.dataset.datos ?? "";
+            const Cabecera = el.dataset.cabecera ?? "";
+            const endpoint = el.dataset.endpoint ?? "";
+            const idField = el.dataset.idfield ?? "";
 
-      const cabeceraTabla = JSON.parse(atob(Cabecera));
-      let gridApi;
-      console.log(cabeceraTabla);
+            const cabeceraTabla = JSON.parse(atob(Cabecera));
+            const datosIniciales = JSON.parse(atob(ListaDatosBase64));
+            let gridApi: any;
 
-      const gridOptions = {
-        statusBar:{
-                        statusPanels:[{
-                        statusPanel:'agSelectedRowCountComponent',
-                        align:'left'
+            const guardarCambio = async (rowData: any) => {
+                try {
+                    const respuesta = await fetch(endpoint, {
+                        method: "PUT",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify(rowData),
+                    });
+                    if (!respuesta.ok)
+                        throw new Error(`Error HTTP: ${respuesta.status}`);
+                    return true;
+                } catch (error) {
+                    console.error("Error al guardar cambio:", error);
+                    alert("No se pudo guardar el cambio. Revisa la consola.");
+                    return false;
+                }
+            };
+
+            const crearRegistro = async (rowData: any) => {
+                try {
+                    const respuesta = await fetch(endpoint, {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify(rowData),
+                    });
+                    if (!respuesta.ok)
+                        throw new Error(`Error HTTP: ${respuesta.status}`);
+                    return true;
+                } catch (error) {
+                    console.error("Error al crear registro:", error);
+                    alert("No se pudo crear el registro. Revisa la consola.");
+                    return false;
+                }
+            };
+
+            const recargarDatos = async () => {
+                try {
+                    const respuesta = await fetch(endpoint);
+                    if (!respuesta.ok)
+                        throw new Error(`Error HTTP: ${respuesta.status}`);
+                    const cuerpo = await respuesta.json();
+                    gridApi.setGridOption("rowData", cuerpo.data ?? []);
+                } catch (error) {
+                    console.error("Error al recargar los datos:", error);
+                }
+            };
+
+            const eliminarFila = async (rowData: any) => {
+                if (!confirm("¿Seguro que deseas eliminar este registro?"))
+                    return;
+                try {
+                    const respuesta = await fetch(endpoint, {
+                        method: "DELETE",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ [idField]: rowData[idField] }),
+                    });
+                    if (!respuesta.ok)
+                        throw new Error(`Error HTTP: ${respuesta.status}`);
+                    gridApi.applyTransaction({ remove: [rowData] });
+                } catch (error) {
+                    console.error("Error al eliminar:", error);
+                    alert(
+                        "No se pudo eliminar el registro. Revisa la consola.",
+                    );
+                }
+            };
+
+            // ---------- Modal de edición ----------
+            const contenedorPadre = el.parentElement as HTMLElement;
+
+            const modalOverlay = document.createElement("div");
+            modalOverlay.className = "modal-overlay";
+
+            const modalBox = document.createElement("div");
+            modalBox.className = "modal-box";
+
+            const modalTitulo = document.createElement("h3");
+            modalTitulo.innerText = "Editar registro";
+
+            const modalForm = document.createElement("form");
+            modalForm.className = "modal-form";
+
+            const modalCampos = document.createElement("div");
+            modalCampos.className = "modal-campos";
+
+            const modalBotones = document.createElement("div");
+            modalBotones.className = "modal-botones";
+
+            const btnCancelarModal = document.createElement("button");
+            btnCancelarModal.type = "button";
+            btnCancelarModal.innerText = "Cancelar";
+            btnCancelarModal.className = "btn btn-secondary btn-sm";
+
+            const btnGuardarModal = document.createElement("button");
+            btnGuardarModal.type = "submit";
+            btnGuardarModal.innerText = "Guardar";
+            btnGuardarModal.className = "btn btn-primary btn-sm";
+
+            modalBotones.appendChild(btnCancelarModal);
+            modalBotones.appendChild(btnGuardarModal);
+
+            modalForm.appendChild(modalCampos);
+            modalForm.appendChild(modalBotones);
+
+            modalBox.appendChild(modalTitulo);
+            modalBox.appendChild(modalForm);
+            modalOverlay.appendChild(modalBox);
+            contenedorPadre.appendChild(modalOverlay);
+
+            let filaEnEdicion: any = null;
+            let modoModal: "crear" | "editar" = "editar";
+
+            const cerrarModal = () => {
+                modalOverlay.classList.remove("abierto");
+                modalCampos.innerHTML = "";
+                filaEnEdicion = null;
+            };
+
+            btnCancelarModal.addEventListener("click", cerrarModal);
+            modalOverlay.addEventListener("click", (evento) => {
+                if (evento.target === modalOverlay) cerrarModal();
+            });
+
+            // Para inferir si un campo es numérico incluso al crear (sin valor todavía)
+            const esCampoNumerico = (campo: string) =>
+                typeof datosIniciales[0]?.[campo] === "number" ||
+                campo.toLowerCase().startsWith("id");
+
+            const crearCampoModal = (campo: string, valorInicial: any) => {
+                const grupo = document.createElement("div");
+                grupo.className = "modal-field";
+
+                const label = document.createElement("label");
+                label.innerText = campo.charAt(0).toUpperCase() + campo.slice(1);
+
+                const input = document.createElement("input");
+                input.value = valorInicial ?? "";
+
+                const esNumero = esCampoNumerico(campo);
+                if (esNumero) input.type = "number";
+
+                input.addEventListener("input", () => {
+                    filaEnEdicion[campo] = esNumero
+                        ? Number(input.value)
+                        : input.value;
+                });
+
+                grupo.appendChild(label);
+                grupo.appendChild(input);
+                modalCampos.appendChild(grupo);
+
+                return input;
+            };
+
+            const abrirModalEdicion = (rowData: any) => {
+                modoModal = "editar";
+                modalTitulo.innerText = "Editar registro";
+                filaEnEdicion = { ...rowData };
+                modalCampos.innerHTML = "";
+
+                cabeceraTabla
+                    .filter((campo: string) => campo !== "contrasena")
+                    .forEach((campo: string) => {
+                        const input = crearCampoModal(campo, rowData[campo]);
+                        input.disabled = campo === idField;
+                    });
+
+                modalOverlay.classList.add("abierto");
+            };
+
+            const abrirModalCreacion = () => {
+                modoModal = "crear";
+                modalTitulo.innerText = "Nuevo registro";
+                filaEnEdicion = {};
+                modalCampos.innerHTML = "";
+
+                // El id lo genera la base de datos, no se pide al crear
+                cabeceraTabla
+                    .filter(
+                        (campo: string) =>
+                            campo !== "contrasena" && campo !== idField,
+                    )
+                    .forEach((campo: string) => {
+                        crearCampoModal(campo, "");
+                    });
+
+                modalOverlay.classList.add("abierto");
+            };
+
+            modalForm.addEventListener("submit", async (evento) => {
+                evento.preventDefault();
+                if (!filaEnEdicion) return;
+
+                btnGuardarModal.disabled = true;
+
+                const exito =
+                    modoModal === "crear"
+                        ? await crearRegistro(filaEnEdicion)
+                        : await guardarCambio(filaEnEdicion);
+
+                btnGuardarModal.disabled = false;
+
+                if (!exito) return;
+
+                if (modoModal === "crear") {
+                    await recargarDatos();
+                } else {
+                    gridApi.applyTransaction({ update: [filaEnEdicion] });
+                }
+                cerrarModal();
+            });
+
+            const btnNuevo = contenedorPadre.querySelector(
+                ".btn-nuevo",
+            ) as HTMLButtonElement | null;
+            btnNuevo?.addEventListener("click", abrirModalCreacion);
+            // ---------- Fin modal de edición ----------
+
+            const gridOptions = {
+                statusBar: {
+                    statusPanels: [
+                        {
+                            statusPanel: "agSelectedRowCountComponent",
+                            align: "left",
                         },
                         {
-                            statusPanel: 'agFilteredRowCountComponent',
-                            align:'left'
+                            statusPanel: "agFilteredRowCountComponent",
+                            align: "left",
                         },
                         {
-                            statusPanel: 'agTotalRowCountComponent',
-                            align: 'center'
+                            statusPanel: "agTotalRowCountComponent",
+                            align: "center",
                         },
                         {
-                            statusPanel: 'agAggregationComponent',
-                            align: 'right'
-                        }
-                    ]
-                 },
+                            statusPanel: "agAggregationComponent",
+                            align: "right",
+                        },
+                    ],
+                },
 
                 defaultColDef: {
-                        flex: 1,
-                        filter: true,
-                        floatingFilter:true,
-                        enableRowGroup:true,
-                        enableValue:true,
-                    },
+                    flex: 1,
+                    filter: true,
+                    floatingFilter: true,
+                    editable: false,
+                    resizable: true,
+                    sortable: true,
+                },
 
-                  sideBar:{
-                    toolPanels:[{
-                        id: 'columns',
-                        labelDefault: 'Columnas',
-                        labelKey: 'columns',
-                        iconKey: 'columns',
-                        toolPanel: 'agColumnsToolPanel',
-                    },
-                    {
-                        id: 'filters',
-                        labelDefault: 'Filtros',
-                        labelKey: 'filters',
-                        iconKey: 'filters',
-                        toolPanel: 'agFiltersToolPanel',
-                    }
+                sideBar: {
+                    toolPanels: [
+                        {
+                            id: "columns",
+                            labelDefault: "Columnas",
+                            labelKey: "columns",
+                            iconKey: "columns",
+                            toolPanel: "agColumnsToolPanel",
+                        },
+                        {
+                            id: "filters",
+                            labelDefault: "Filtros",
+                            labelKey: "filters",
+                            iconKey: "filters",
+                            toolPanel: "agFiltersToolPanel",
+                        },
                     ],
-                    defaultToolPanel: 'columns',
-                 },
+                    defaultToolPanel: "columns",
+                },
 
-                 enableRangeSelection: true, 
+                rowData: datosIniciales,
 
-                 rowData: JSON.parse(atob(ListaDatosBase64)),
+                getRowId: (params: any) => String(params.data[idField]),
 
-                 columnDefs: [
-                    ...cabeceraTabla.map((campo: string)=>({
-                        field: campo,
-                        headerName: campo.charAt(0).toUpperCase() + campo.slice(1),
-                        sortable: true,
-                        filter: true,
-                        resizable: true,
-                    }))
-                 ],
+                columnDefs: [
+                    ...cabeceraTabla
+                        .filter((campo: string) => campo !== "contrasena")
+                        .map((campo: string) => ({
+                            field: campo,
+                            headerName:
+                                campo.charAt(0).toUpperCase() + campo.slice(1),
+                        })),
+                    {
+                        headerName: "Acciones",
+                        editable: false,
+                        filter: false,
+                        sortable: false,
+                        cellRenderer: (params: any) => {
+                            const contenedor = document.createElement("div");
 
-                 pagination: true,
-                 wrapText: true,
-                 autoHeight: true,
+                            // Botón Editar
+                            const btnEditar = document.createElement("button");
+                            btnEditar.innerText = "Editar";
+                            btnEditar.className = "btn btn-primary btn-sm me-2";
+                            btnEditar.addEventListener("click", () =>
+                                abrirModalEdicion(params.data),
+                            );
 
-                 onGridReady:(params:any)=>{
-                    gridApi= params.api;
-                 }
-      }
+                            // Botón Eliminar
+                            const btnEliminar =
+                                document.createElement("button");
+                            btnEliminar.innerText = "Eliminar";
+                            btnEliminar.className = "btn btn-danger btn-sm";
+                            btnEliminar.addEventListener("click", () =>
+                                eliminarFila(params.data),
+                            );
 
-      createGrid(el, gridOptions);
-    });
-</script>
+                            contenedor.appendChild(btnEditar);
+                            contenedor.appendChild(btnEliminar);
 
+                            return contenedor;
+                        },
+                    },
+                ],
 
+                pagination: true,
+                wrapText: true,
+                autoHeight: true,
 
-</div>  
+                onGridReady: (params: any) => {
+                    gridApi = params.api;
+                },
+            };
+
+            createGrid(el, gridOptions);
+        });
+    </script>
+
+    <style is:global>
+        .ag-grid-toolbar {
+            display: flex;
+            justify-content: flex-end;
+            margin-bottom: 0.6rem;
+        }
+
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.5);
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .modal-overlay.abierto {
+            display: flex;
+        }
+
+        .modal-box {
+            background: #fff;
+            border-radius: 8px;
+            padding: 1.5rem;
+            width: min(90vw, 420px);
+            max-height: 85vh;
+            overflow-y: auto;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+        }
+
+        .modal-box h3 {
+            margin-top: 0;
+        }
+
+        .modal-form {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .modal-campos {
+            display: flex;
+            flex-direction: column;
+            gap: 0.7rem;
+        }
+
+        .modal-field {
+            display: flex;
+            flex-direction: column;
+            gap: 0.2rem;
+        }
+
+        .modal-field label {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .modal-field input {
+            padding: 0.5rem;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 0.95rem;
+        }
+
+        .modal-field input:disabled {
+            background-color: #eee;
+            color: #777;
+        }
+
+        .modal-botones {
+            display: flex;
+            justify-content: flex-end;
+            gap: 0.6rem;
+            margin-top: 1.2rem;
+        }
+    </style>
+</div>
